@@ -8,23 +8,30 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 
-def get_food_from_html(html):
+def get_menu_list_from_html(html):
     s = '<div class="meal-item[^>]*> <[^>]*> <[^>]*alt="([^"]*)[^>]*> <[^>]*> <[^>]*> ([^<]*)'
     pattern = re.compile(s)
 
-    result = ""
-    for match in re.finditer(pattern, html):
-        result += "*{}*: {}\n".format(match.group(1), match.group(2))
+    return ((match.group(1), match.group(2)) for match in re.finditer(pattern, html))
 
-    return result
+
+def remove_additives(string):
+    s = " \([^)]+\)"
+    return re.sub(s, '', string)
+
+
+def menu_list_to_string(menu_list):
+    return '\n'.join(
+        "*{}*: {}".format(t[0], remove_additives(t[1])) for t in
+        menu_list if t[0] not in ("Beilagen", "Grillstation"))
 
 
 def get_menu_as_string():
     http = urllib3.PoolManager()
     r = http.request('GET', 'https://www.stwdo.de/mensa-co/tu-dortmund/hauptmensa/')
     if r.status == 200:
-        return get_food_from_html(r.data.decode('utf-8'))
-    return None
+        menu_list = get_menu_list_from_html(r.data.decode('utf-8'))
+        return menu_list_to_string(menu_list)
 
 
 def start(bot, update, job_queue):
