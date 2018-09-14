@@ -1,11 +1,36 @@
 import logging
 import urllib3
-from telegram.ext import Updater, CommandHandler
+from enum import Enum
 import datetime
 import re
 
+from telegram.ext import Updater, CommandHandler
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
+
+
+class Mensa(Enum):
+    DEFAULT = 0
+    NORD = 1
+    SUED = 2
+    SONNE = 3
+
+
+def get_website(mensa):
+    http = urllib3.PoolManager()
+
+    if mensa == Mensa.DEFAULT or mensa == Mensa.NORD:
+        r = http.request('GET', 'https://www.stwdo.de/mensa-co/tu-dortmund/hauptmensa/')
+    elif mensa == Mensa.SUED:
+        r = http.request('GET', "https://www.stwdo.de/mensa-co/tu-dortmund/mensa-sued/")
+    elif mensa == Mensa.SONNE:
+        r = http.request('GET', 'https://www.stwdo.de/mensa-co/fh-dortmund/sonnenstrasse/')
+    else:
+        r = None
+
+    if r.status == 200:
+        return r.data.decode('utf-8')
 
 
 def get_menu_list_from_html(html):
@@ -26,12 +51,9 @@ def menu_list_to_string(menu_list):
         menu_list if t[0] not in ("Beilagen", "Grillstation"))
 
 
-def get_menu_as_string():
-    http = urllib3.PoolManager()
-    r = http.request('GET', 'https://www.stwdo.de/mensa-co/tu-dortmund/hauptmensa/')
-    if r.status == 200:
-        menu_list = get_menu_list_from_html(r.data.decode('utf-8'))
-        return menu_list_to_string(menu_list)
+def get_menu_as_string(mensa):
+    menu_list = get_menu_list_from_html(get_website(mensa))
+    return menu_list_to_string(menu_list)
 
 
 def start(bot, update, job_queue):
@@ -50,13 +72,13 @@ def stop(bot, update, job_queue):
 
 
 def menu(bot, update):
-    message = get_menu_as_string()
+    message = get_menu_as_string(Mensa.DEFAULT)
     bot.send_message(chat_id=update.message.chat_id, text=message, parse_mode='Markdown')
 
 
 def daily_menu(bot, job):
     if job.context:
-        message = get_menu_as_string()
+        message = get_menu_as_string(Mensa.DEFAULT)
         bot.send_message(chat_id=job.context, text=message, parse_mode='Markdown')
     else:
         print("Error!")
