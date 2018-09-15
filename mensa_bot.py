@@ -72,7 +72,11 @@ def stop(bot, update, job_queue):
 
 
 def menu(bot, update):
-    message = get_menu_as_string(Mensa.DEFAULT)
+    if datetime.datetime.today().weekday() < 5:
+        message = get_menu_as_string(Mensa.DEFAULT)
+    else:
+        message = "An Wochenenden sind die Mensen leider geschlossen."
+
     bot.send_message(chat_id=update.message.chat_id, text=message, parse_mode='Markdown')
 
 
