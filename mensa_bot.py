@@ -41,8 +41,13 @@ def get_menu_list_from_html(html):
 
 
 def remove_additives(string):
-    s = " \([^)]+\)"
-    return re.sub(s, '', string)
+    additives = "\(\d+[a-z]?(,\d+[a-z]?)*\)"
+    return remove_whitespaces(re.sub(additives, '', string))
+
+
+def remove_whitespaces(string):
+    multiple_whitespaces = " +"
+    return re.sub(multiple_whitespaces, '', string)
 
 
 def menu_list_to_string(menu_list):
