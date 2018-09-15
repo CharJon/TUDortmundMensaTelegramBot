@@ -47,7 +47,7 @@ def remove_additives(string):
 
 def remove_whitespaces(string):
     multiple_whitespaces = " +"
-    return re.sub(multiple_whitespaces, '', string)
+    return re.sub(multiple_whitespaces, ' ', string)
 
 
 def menu_list_to_string(menu_list):
