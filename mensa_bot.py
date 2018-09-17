@@ -38,10 +38,12 @@ def get_website(mensa):
     elif mensa == Mensa.SONNE:
         r = http.request('GET', 'https://www.stwdo.de/mensa-co/fh-dortmund/sonnenstrasse/')
     else:
-        r = None
+        return None
 
     if r.status == 200:
         return r.data.decode('utf-8')
+    else:
+        return None
 
 
 def get_menu_list_from_html(html):
