@@ -83,7 +83,7 @@ def menu_list_to_string(menu_list):
 
 def get_menu_as_string(mensa):
     menu_list = get_menu_list_from_html(get_website(mensa))
-    return Mensa.get_name(mensa) + '\n' + menu_list_to_string(menu_list)
+    return Mensa.get_name(mensa) + '\n' + "-------" + '\n' + menu_list_to_string(menu_list)
 
 
 def get_menu(mensa):
@@ -118,12 +118,12 @@ def menu(bot, update, args):
         for i, cur_mensa_arg in enumerate(listed_mensas):
             cur_mensa = Mensa.from_string(cur_mensa_arg)
             if not cur_mensa == Mensa.UNKNOWN:
-                message += get_menu(Mensa.from_string(cur_mensa))
+                message += get_menu(cur_mensa)
             else:
-                message += "Entschuldige, die Mensa {} ist mir nicht bekannt.".format(listed_mensas[i])
+                message += "Entschuldige, die Mensa '{}' ist mir nicht bekannt.".format(listed_mensas[i])
 
             if i < len(listed_mensas):
-                message += '\n'
+                message += '\n\n'
 
     bot.send_message(chat_id=update.message.chat_id, text=message, parse_mode='Markdown')
 
