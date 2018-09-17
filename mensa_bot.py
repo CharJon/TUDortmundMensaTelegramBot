@@ -26,7 +26,18 @@ class Mensa(Enum):
         elif string == "sonne":
             return Mensa.SONNE
         else:
-            return Mensa.DEFAULT
+            return Mensa.UNKNOWN
+
+    @staticmethod
+    def get_name(mensa):
+        if mensa == Mensa.NORD or mensa == Mensa.DEFAULT:
+            return "*Mensa Nord*"
+        elif mensa == Mensa.SUED:
+            return "*Mensa Sued*"
+        elif mensa == Mensa.SONNE:
+            return "*Mensa Sonnenstrasse*"
+        elif mensa == Mensa.UNKNOWN:
+            return "*Mensa unbekannt!*"
 
 
 def get_website(mensa):
@@ -72,12 +83,12 @@ def menu_list_to_string(menu_list):
 
 def get_menu_as_string(mensa):
     menu_list = get_menu_list_from_html(get_website(mensa))
-    return menu_list_to_string(menu_list)
+    return Mensa.get_name(mensa) + '\n' + menu_list_to_string(menu_list)
 
 
 def get_menu(mensa):
     if datetime.datetime.today().weekday() < 5:
-        return get_menu_as_string(Mensa.DEFAULT)
+        return get_menu_as_string(mensa)
     else:
         return "An Wochenenden sind die Mensen leider geschlossen."
 
@@ -99,24 +110,20 @@ def stop(bot, update, job_queue):
 
 def menu(bot, update, args):
     message = ""
-    men = list(set(args))
-    if len(men) == 0:
-        message = get_menu(Mensa.DEFAULT)
-    elif len(men) == 1:
-        message = get_menu(Mensa.from_string(men[0]))
-    else:
-        for i, mensa in enumerate(men):
-            mensa_type = Mensa.from_string(mensa)
-            if mensa_type == Mensa.NORD or mensa_type == Mensa.DEFAULT:
-                message += "*Mensa Nord*:  "
-            elif mensa_type == Mensa.SUED:
-                message += "*Mensa Sued*:  "
-            else:
-                message += "*Mensa Sonnenstrasse*:  "
-            message += get_menu(mensa_type)
+    listed_mensas = list(set(args))
 
-            if i < len(men):
-                message += "  "  # markdown line break
+    if len(listed_mensas) == 0:
+        message = get_menu(Mensa.DEFAULT)
+    else:
+        for i, cur_mensa_arg in enumerate(listed_mensas):
+            cur_mensa = Mensa.from_string(cur_mensa_arg)
+            if not cur_mensa == Mensa.UNKNOWN:
+                message += get_menu(Mensa.from_string(cur_mensa))
+            else:
+                message += "Entschuldige, die Mensa {} ist mir nicht bekannt.".format(listed_mensas[i])
+
+            if i < len(listed_mensas):
+                message += '\n'
 
     bot.send_message(chat_id=update.message.chat_id, text=message, parse_mode='Markdown')
 
