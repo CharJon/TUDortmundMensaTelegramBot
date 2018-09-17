@@ -11,6 +11,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 
 class Mensa(Enum):
+    UNKNOWN = -1
     DEFAULT = 0
     NORD = 1
     SUED = 2
