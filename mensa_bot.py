@@ -61,6 +61,24 @@ def get_menu_as_string(mensa):
     return menu_list_to_string(menu_list)
 
 
+def get_mensa(mensa):
+    if mensa == "nord":
+        return Mensa.NORD
+    elif mensa == "sued":
+        return Mensa.SUED
+    elif mensa == "sonne":
+        return Mensa.SONNE
+    else:
+        return Mensa.DEFAULT
+
+
+def get_menu(mensa):
+    if datetime.datetime.today().weekday() < 5:
+        return get_menu_as_string(Mensa.DEFAULT)
+    else:
+        return "An Wochenenden sind die Mensen leider geschlossen."
+
+
 def start(bot, update, job_queue):
     message = "Hey, I will send the menu every weekday at 10:00."
     bot.send_message(chat_id=update.message.chat_id, text=message)
@@ -76,12 +94,28 @@ def stop(bot, update, job_queue):
         cur_job.schedule_removal()
 
 
-def menu(bot, update):
-    if datetime.datetime.today().weekday() < 5:
-        message = get_menu_as_string(Mensa.DEFAULT)
+def menu(bot, update, args):
+    message = ""
+    men = list(set(args))
+    if len(men) == 0:
+        message = get_menu(Mensa.DEFAULT)
+    elif len(men) == 1:
+        message = get_menu(get_mensa(men[0]))
     else:
-        message = "An Wochenenden sind die Mensen leider geschlossen."
+        i = 1
+        for mensa in men:
+            mensa_type = get_mensa(mensa)
+            if mensa_type == Mensa.NORD or mensa_type == Mensa.DEFAULT:
+                message += "*Mensa Nord*:  "
+            elif mensa_type == Mensa.SUED:
+                message += "*Mensa Sued*:  "
+            else:
+                message += "*Mensa Sonnenstrasse*:  "
+            message += get_menu(mensa_type)
 
+            if i < len(men):
+                message += "  "  # markdown line break
+            i += 1
     bot.send_message(chat_id=update.message.chat_id, text=message, parse_mode='Markdown')
 
 
@@ -115,7 +149,7 @@ class MensaBot:
     def add_handler(self):
         start_handler = CommandHandler('start', start, pass_job_queue=True)
         stop_handler = CommandHandler('stop', stop, pass_job_queue=True)
-        menu_handler = CommandHandler('menu', menu)
+        menu_handler = CommandHandler('menu', menu, pass_args=True)
 
         self.dispatcher.add_handler(start_handler)
         self.dispatcher.add_handler(stop_handler)
