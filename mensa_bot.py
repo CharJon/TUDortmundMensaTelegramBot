@@ -104,8 +104,7 @@ def menu(bot, update, args):
     elif len(men) == 1:
         message = get_menu(Mensa.from_string(men[0]))
     else:
-        i = 1
-        for mensa in men:
+        for i, mensa in enumerate(men):
             mensa_type = Mensa.from_string(mensa)
             if mensa_type == Mensa.NORD or mensa_type == Mensa.DEFAULT:
                 message += "*Mensa Nord*:  "
@@ -117,7 +116,7 @@ def menu(bot, update, args):
 
             if i < len(men):
                 message += "  "  # markdown line break
-            i += 1
+
     bot.send_message(chat_id=update.message.chat_id, text=message, parse_mode='Markdown')
 
 
