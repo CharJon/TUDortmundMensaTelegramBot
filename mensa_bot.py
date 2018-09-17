@@ -16,6 +16,17 @@ class Mensa(Enum):
     SUED = 2
     SONNE = 3
 
+    @staticmethod
+    def from_string(string):
+        if string == "nord":
+            return Mensa.NORD
+        elif string == "sued":
+            return Mensa.SUED
+        elif string == "sonne":
+            return Mensa.SONNE
+        else:
+            return Mensa.DEFAULT
+
 
 def get_website(mensa):
     http = urllib3.PoolManager()
@@ -61,17 +72,6 @@ def get_menu_as_string(mensa):
     return menu_list_to_string(menu_list)
 
 
-def get_mensa(mensa):
-    if mensa == "nord":
-        return Mensa.NORD
-    elif mensa == "sued":
-        return Mensa.SUED
-    elif mensa == "sonne":
-        return Mensa.SONNE
-    else:
-        return Mensa.DEFAULT
-
-
 def get_menu(mensa):
     if datetime.datetime.today().weekday() < 5:
         return get_menu_as_string(Mensa.DEFAULT)
@@ -100,11 +100,11 @@ def menu(bot, update, args):
     if len(men) == 0:
         message = get_menu(Mensa.DEFAULT)
     elif len(men) == 1:
-        message = get_menu(get_mensa(men[0]))
+        message = get_menu(Mensa.from_string(men[0]))
     else:
         i = 1
         for mensa in men:
-            mensa_type = get_mensa(mensa)
+            mensa_type = Mensa.from_string(mensa)
             if mensa_type == Mensa.NORD or mensa_type == Mensa.DEFAULT:
                 message += "*Mensa Nord*:  "
             elif mensa_type == Mensa.SUED:
