@@ -39,13 +39,22 @@ class MensaBot:
         self.dispatcher.add_handler(menu_handler)
 
     def add_jobs_from_db_to_queue(self):
-        pass
+        for entry in cm.chat_manager.get_update_chats():
+            self.add_daily_update_job(datetime.time(10, 0), entry[0])
 
     def start(self, bot, update, job_queue):
         message = "Hey, I will send the menu every weekday at 10:00." + '\n' + "To stop me from doing this send me '/stop'."
         bot.send_message(chat_id=update.message.chat_id, text=message)
-        job_queue.run_daily(self.daily_menu, datetime.time(10, 0), days=(0, 1, 2, 3, 4),
-                            context=update.message.chat_id)
+
+        update_time = datetime.time(10, 0)
+        update_chat_id = update.message.chat_id
+
+        cm.chat_manager.add_update(update_chat_id, update_time, 'nord')
+        self.add_daily_update_job(update_time, update_chat_id)
+
+    def add_daily_update_job(self, time, chat_id):
+        self.job_queue.run_daily(self.daily_menu, time, days=(0, 1, 2, 3, 4),
+                                 context=chat_id)
 
     def stop(self, bot, update, job_queue):
         jobs = job_queue.get_jobs_by_name(update.message.chat_id)
