@@ -107,5 +107,8 @@ venv.bak/
 token
 token_testbot
 
+# db
+chats.db
+
 # idea
 .idea/*
