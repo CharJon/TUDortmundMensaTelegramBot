@@ -20,17 +20,29 @@ class ChatManager:
         self.daily_updates = DailyUpdates(sqlite_db)
         sqlite_db.connect()
         sqlite_db.create_tables([DailyUpdates])
-        sqlite_db.close()
 
     def get_update_chats(self):
-        sqlite_db.connect()
         result = [(update.chat_id, update.time, update.mensa) for update in DailyUpdates.select()]
-        sqlite_db.close()
         return result
 
     def add_update(self, chat_id, time, mensa):
-        sqlite_db.connect()
         DailyUpdates.create(chat_id=chat_id, time=time, mensa=mensa)
+        sqlite_db.commit()
+
+    def remove_update(self, chat_id):
+        for update in DailyUpdates.select().where(DailyUpdates.chat_id == chat_id):
+            update.delete_instance()
+        sqlite_db.commit()
+
+    def update_already_scheduled(self, chat_id, mensa):
+        already_scheduled = DailyUpdates.select().where(DailyUpdates.chat_id == chat_id,
+                                                        DailyUpdates.mensa == mensa)
+        if already_scheduled:
+            return True
+        else:
+            return False
+
+    def __del__(self):
         sqlite_db.close()
 
 

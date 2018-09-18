@@ -22,15 +22,14 @@ class MensaBot:
         self.job_queue = self.updater.job_queue
 
         self.add_handler()
-        self.start_bot()
+        self.add_jobs_from_db_to_queue()
         print("Bot started.")
 
     def start_bot(self):
-        self.add_jobs_from_db_to_queue()
         self.updater.start_polling()
 
     def add_handler(self):
-        start_handler = CommandHandler('start', self.start, pass_job_queue=True)
+        start_handler = CommandHandler('start', self.start)
         stop_handler = CommandHandler('stop', self.stop, pass_job_queue=True)
         menu_handler = CommandHandler('menu', self.menu, pass_args=True)
 
@@ -42,25 +41,33 @@ class MensaBot:
         for entry in cm.chat_manager.get_update_chats():
             self.add_daily_update_job(datetime.time(10, 0), entry[0])
 
-    def start(self, bot, update, job_queue):
-        message = "Hey, I will send the menu every weekday at 10:00." + '\n' + "To stop me from doing this send me '/stop'."
-        bot.send_message(chat_id=update.message.chat_id, text=message)
+    def start(self, bot, update):
+        chat_id = update.message.chat_id
 
-        update_time = datetime.time(10, 0)
-        update_chat_id = update.message.chat_id
+        if cm.chat_manager.update_already_scheduled(chat_id=chat_id, mensa='nord'):
+            message = "You already have a daily update scheduled." + '\n' + "You can stop it by telling me to '/stop'."
+        else:
+            message = "Hey, I will send the menu every weekday at 10:00." + '\n' + "To stop me from doing this send me '/stop'."
+            update_time = datetime.time(10, 0)
+            update_chat_id = update.message.chat_id
 
-        cm.chat_manager.add_update(update_chat_id, update_time, 'nord')
-        self.add_daily_update_job(update_time, update_chat_id)
+            cm.chat_manager.add_update(update_chat_id, update_time, 'nord')
+            self.add_daily_update_job(update_time, update_chat_id)
+
+        bot.send_message(chat_id=chat_id, text=message)
 
     def add_daily_update_job(self, time, chat_id):
         self.job_queue.run_daily(self.daily_menu, time, days=(0, 1, 2, 3, 4),
-                                 context=chat_id)
+                                 context=chat_id, name=chat_id)
 
     def stop(self, bot, update, job_queue):
-        jobs = job_queue.get_jobs_by_name(update.message.chat_id)
-        bot.send_message(chat_id=update.message.chat_id,
-                         text="I will stop sending the menu to this chat    .".format(update.message.chat_id))
+        chat_id = update.message.chat_id
+        jobs = job_queue.get_jobs_by_name(chat_id)
+        bot.send_message(chat_id=chat_id,
+                         text="I will stop sending the menu daily to this chat ({}).".format(update.message.chat_id))
+
         for cur_job in jobs:
+            cm.chat_manager.remove_update(chat_id)
             cur_job.schedule_removal()
 
     def menu(self, bot, update, args):
