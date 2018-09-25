@@ -49,7 +49,7 @@ class MensaBot:
         bot.send_message(chat_id=update.message.chat_id, text=message)
 
     def stop(self, bot, update, job_queue):
-        message = "Alle regelmäßigen updates gestoppt. Ich schreibe nur noch auf direkte Anfrage."
+        message = "Alle regelmäßigen Updates gestoppt. Ich schreibe nur noch auf direkte Anfrage."
         bot.send_message(chat_id=update.message.chat_id, text=message)
 
         jobs = job_queue.get_jobs_by_name(update.message.chat_id)
