@@ -3,7 +3,6 @@ import logging
 from telegram.ext import Updater, CommandHandler
 
 from mensa_parser import *
-import chat_manager as cm
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -30,29 +29,42 @@ class MensaBot:
         self.updater.start_polling()
 
     def add_handler(self):
-        start_handler = CommandHandler('start', self.start, pass_job_queue=True)
+        start_handler = CommandHandler('start', self.start)
         stop_handler = CommandHandler('stop', self.stop, pass_job_queue=True)
         menu_handler = CommandHandler('menu', self.menu, pass_args=True)
+        start_daily_handler = CommandHandler('start_daily', self.start_daily, pass_job_queue=True)
+        stop_daily_handler = CommandHandler('stop_daily', self.stop_daily, pass_job_queue=True)
 
         self.dispatcher.add_handler(start_handler)
         self.dispatcher.add_handler(stop_handler)
         self.dispatcher.add_handler(menu_handler)
+        self.dispatcher.add_handler(start_daily_handler)
+        self.dispatcher.add_handler(stop_daily_handler)
 
     def add_jobs_from_db_to_queue(self):
         pass
 
-    def start(self, bot, update, job_queue):
-        message = "Hey, I will send the menu every weekday at 10:00." + '\n' + "To stop me from doing this send me '/stop'."
+    def start(self, bot, update):
+        message = "Hey :)" + '\n' + "Über /menu schicke ich das aktuelle Menü der Mensa-Nord."
+        bot.send_message(chat_id=update.message.chat_id, text=message)
+
+    def stop(self, bot, update, job_queue):
+        message = "Alle regelmäßigen updates gestoppt. Ich schreibe nur noch auf direkte Anfrage."
+        bot.send_message(chat_id=update.message.chat_id, text=message)
+
+        jobs = job_queue.get_jobs_by_name(update.message.chat_id)
+        for cur_job in jobs:
+            cur_job.schedule_removal()
+
+    def stop_daily(self, bot, update, job_queue):
+        self.stop(bot, update, job_queue)
+
+    def start_daily(self, bot, update, job_queue):
+        message = "Ich sende ab jetzt jeden Tag um 10 Uhr das Menü in diesen Chat."
+        message += '\n' + "Sende mir /stop_daily um das regelmäßige Update zu stopppen."
         bot.send_message(chat_id=update.message.chat_id, text=message)
         job_queue.run_daily(self.daily_menu, datetime.time(10, 0), days=(0, 1, 2, 3, 4),
                             context=update.message.chat_id)
-
-    def stop(self, bot, update, job_queue):
-        jobs = job_queue.get_jobs_by_name(update.message.chat_id)
-        bot.send_message(chat_id=update.message.chat_id,
-                         text="I will stop sending the menu to this chat    .".format(update.message.chat_id))
-        for cur_job in jobs:
-            cur_job.schedule_removal()
 
     def menu(self, bot, update, args):
         message = ""
